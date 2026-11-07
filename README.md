@@ -483,6 +483,22 @@ What to know before relying on it:
 - [ ] Sub-agents for exploring, reviewing and testing
 - [ ] MCP tool integration
 
+## Contributors
+
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%">
+        <a href="https://github.com/OjasD07">
+          <img src="https://github.com/ojasd07.png?size=100" width="80px;" alt="Ojas Deshpande"/><br />
+          <sub><b>Ojas Deshpande</b></sub>
+        </a><br />
+        <sub>@OjasD07</sub>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
 ## Contributing
 
 Contributions are welcome. To get set up:
