@@ -502,7 +502,7 @@ export class AgentRuntime {
       return;
     }
     p.summary = req.summary;
-    if (this.mode === "plan" && (tool.category === "write" || tool.category === "execute")) {
+    if (this.mode === "plan" && (tool.category === "write" || tool.category === "execute" || tool.category === "mcp")) {
       p.outcome = "denied";
       p.deniedBy = "policy";
       p.result = fail("permission_denied", "Plan mode: nothing may be changed or run until the user approves the plan. Record the step in update_plan instead.");
@@ -553,7 +553,7 @@ export class AgentRuntime {
   private async run(p: PreparedCall, st: TurnState, signal: AbortSignal): Promise<void> {
     const tool = p.tool!;
     const started = new Date();
-    this.emit({ type: "tool_start", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: p.args });
+    this.emit({ type: "tool_start", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: this.redactForEvent(p.args) });
     const callAc = new AbortController();
     const onAbort = () => callAc.abort();
     signal.addEventListener("abort", onAbort, { once: true });
@@ -586,7 +586,16 @@ export class AgentRuntime {
     const durationMs = Date.now() - started.getTime();
     this.d.usage.recordTool(durationMs);
     this.afterTool(p, st);
-    this.emit({ type: "tool_end", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: p.args, result: p.result!, durationMs, outcome: p.outcome ?? "ok" });
+    this.emit({
+      type: "tool_end",
+      toolCallId: p.call.id,
+      name: tool.name,
+      summary: p.summary,
+      args: this.redactForEvent(p.args),
+      result: this.redactedResult(p.result!),
+      durationMs,
+      outcome: p.outcome ?? "ok",
+    });
     this.persistInvocation(p, started, durationMs);
   }
 
@@ -622,7 +631,11 @@ export class AgentRuntime {
       if (tool.name === "run_tests" || tool.name === "diagnose_failure")
         st.tests.push({ command: String(r.data.command), passed: r.data.exitCode === 0, ...(r.data.counts ? { counts: r.data.counts as TestCounts } : {}) });
     }
-    if (!r.ok) this.recentErrors = [...this.recentErrors.slice(-9), `${tool.name}: ${r.error?.message ?? r.output}`];
+    if (!r.ok)
+      this.recentErrors = [
+        ...this.recentErrors.slice(-9),
+        this.d.redactor.redact(`${tool.name}: ${r.error?.message ?? r.output}`),
+      ];
   }
 
   private persistInvocation(p: PreparedCall, started: Date, durationMs: number): void {
@@ -631,14 +644,41 @@ export class AgentRuntime {
       sessionId: this.d.sessionId,
       toolCallId: p.call.id,
       name: p.call.name,
-      arguments: p.call.arguments,
+      arguments: this.d.redactor.redact(p.call.arguments),
       status: p.outcome ?? "ok",
       output: this.d.redactor.redact(r.output),
-      ...(r.data ? { data: r.data } : {}),
+      ...(r.data ? { data: this.redactForEvent(r.data) as Record<string, unknown> } : {}),
       startedAt: started.toISOString(),
       endedAt: new Date(started.getTime() + durationMs).toISOString(),
       durationMs,
     });
+  }
+
+  /**
+   * Copy model-supplied data with known secrets replaced. Used for events and
+   * persistence so a secret never reaches the UI, JSON output or the database
+   * through tool arguments. The depth cap keeps hostile nesting bounded.
+   */
+  private redactForEvent(value: unknown, depth = 0): unknown {
+    if (depth > 20) return "[truncated]";
+    if (typeof value === "string") return this.d.redactor.redact(value);
+    if (Array.isArray(value)) return value.map((v) => this.redactForEvent(v, depth + 1));
+    if (value && typeof value === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value)) out[k] = this.redactForEvent(v, depth + 1);
+      return out;
+    }
+    return value;
+  }
+
+  /** A redacted copy of a tool result for UI events and JSON output. */
+  private redactedResult(result: ToolResult): ToolResult {
+    return {
+      ...result,
+      output: this.d.redactor.redact(result.output),
+      ...(result.error ? { error: { ...result.error, message: this.d.redactor.redact(result.error.message) } } : {}),
+      ...(result.data ? { data: this.redactForEvent(result.data) as Record<string, unknown> } : {}),
+    };
   }
 
   private async executeToolCalls(calls: ToolCall[], st: TurnState, signal: AbortSignal): Promise<void> {
@@ -674,8 +714,8 @@ export class AgentRuntime {
             toolCallId: p.call.id,
             name: p.call.name,
             summary: p.summary,
-            args: p.args,
-            result: p.result,
+            args: this.redactForEvent(p.args),
+            result: this.redactedResult(p.result!),
             durationMs: 0,
             outcome: p.outcome ?? "error",
             ...(p.deniedBy ? { deniedBy: p.deniedBy } : {}),

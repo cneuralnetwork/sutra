@@ -44,7 +44,7 @@ export class ToolRegistry {
   }
 
   definitions(): ToolDefinition[] {
-    return this.list().map((t) => ({ name: t.name, description: t.description, parameters: toJsonSchema(t.schema) }));
+    return this.list().map((t) => ({ name: t.name, description: t.description, parameters: t.parameters ?? toJsonSchema(t.schema) }));
   }
 }
 

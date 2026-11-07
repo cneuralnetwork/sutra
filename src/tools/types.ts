@@ -77,6 +77,12 @@ export interface Tool<A = unknown> {
   description: string;
   version: string;
   schema: z.ZodType<A>;
+  /**
+   * Model-visible JSON Schema for the arguments. Tools that wrap an external
+   * protocol (MCP) keep the server's original schema so the model sees the
+   * exact contract; `schema` still validates the arguments in the harness.
+   */
+  parameters?: Record<string, unknown>;
   category: PermissionCategory;
   /** Read-only tools may run in parallel with each other. */
   readOnly: boolean;

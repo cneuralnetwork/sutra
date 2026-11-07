@@ -12,3 +12,4 @@ export type { Tool, ToolContext, ToolResult } from "./tools/types.js";
 export { PermissionEngine } from "./permissions/engine.js";
 export { SessionStore } from "./memory/store.js";
 export { loadConfig } from "./config/load.js";
+export { connectMcpServers, collectMcpSecrets, type McpRuntime, type ConnectedMcpServer } from "./mcp/client.js";

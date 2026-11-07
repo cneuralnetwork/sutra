@@ -44,6 +44,20 @@ The bubblewrap backend has unit tests for the arguments it generates but **has n
 - File tools (`write_file`, `edit_file`, `apply_patch`) run inside Sutra itself and are governed by the approval gate and workspace checks, not by the sandbox.
 - If the sandbox can't be applied (for example Sutra is already running inside another sandbox), `auto` mode falls back to approvals only and shows a notice. Use `required` if that's unacceptable.
 
+## MCP servers
+
+MCP tools are external code and remote services, so Sutra does not pretend to classify them.
+
+- **User config only.** `mcpServers` can only be set in `~/.sutra/config.json`. A repository's `.sutra/config.json` cannot add a server or a tool. This prevents a cloned repository from launching a process or exfiltrating data through a server you did not choose.
+- **Always ask.** A remote tool may read files, write data, run code or send information anywhere. Every MCP call is category `mcp`: `inspect` does not start servers and hides the tools, `confirm` and `flow` always ask, plan mode refuses them, and non-interactive runs neither start servers nor approve calls. There is deliberately no session-wide grant.
+- **Approval shows the call.** The card names the server and remote tool and previews the arguments (redacted), because the effects are controlled by the server, not by Sutra.
+- **stdio servers are not sandboxed.** They run as a normal child process under your account, outside the command sandbox. Configure only servers you trust. They receive `PATH`, `HOME`, `USER`, `SHELL`, `TERM` and `LOGNAME`, plus only the `env` entries and `inheritEnv` names you specify; your shell's API keys are not passed through.
+- **Secrets are redacted.** Server `env`, inherited values and HTTP header values are added to the session redactor. Tool output, the UI, invocation logs and stored results pass through it.
+- **Tool results are data.** An MCP server can return text that looks like instructions. The system prompt already tells the model to treat tool output as data; the permission engine remains outside the model's reach.
+- **HTTP headers.** Bearer tokens and other auth belongs in `headers` in user config (mode 600). Sutra does not currently implement MCP OAuth flows.
+
+The same limitations as ordinary tools apply: an MCP server can return wrong or hostile content, and the model may send it any arguments you approved. Review the preview before approving a call whose arguments contain source code or credentials.
+
 ## Threats and mitigations
 
 **Path traversal and symlink escapes.** File-tool paths are resolved against the workspace and canonicalised with `realpath`. For paths that don't exist yet, the nearest existing ancestor is canonicalised. Containment is then checked with `path.relative`, not with string prefixes. A symlink inside the workspace that points outside it resolves outside, and is treated that way. The directory walker does not follow symlinked directories.
@@ -72,6 +86,7 @@ The bubblewrap backend has unit tests for the arguments it generates but **has n
 - The sandbox is only tested on macOS, and does not exist on Windows (see above).
 - Command classification is heuristic and conservative. Unknown programs always ask, but a routine-looking command such as `npm test` executes project code.
 - Approvals are per action. The `flow` profile trusts routine workspace edits by design.
+- MCP servers are not sandboxed, and their tools cannot be classified by the harness. Every call asks; non-interactive runs cannot use them.
 - Sutra cannot prevent the provider from seeing what the agent reads. Use `inspect` and your own judgement for confidential code.
 
 Report vulnerabilities privately to the maintainers (see CONTRIBUTING.md), not in public issues.

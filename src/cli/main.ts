@@ -2,6 +2,7 @@ import { paths } from "../config/paths.js";
 import { loadConfig } from "../config/load.js";
 import { openSession } from "../core/session.js";
 import { setLanguage, t } from "../i18n/index.js";
+import { collectMcpSecrets, connectMcpServers, type McpRuntime } from "../mcp/client.js";
 import { SessionStore } from "../memory/store.js";
 import { canonicalize } from "../permissions/paths.js";
 import { createProvider, providerNeedsKey } from "../providers/registry.js";
@@ -9,6 +10,7 @@ import type { SessionHandle } from "../core/session.js";
 import { runAuditCommand } from "./audit-command.js";
 import { runBenchCommand } from "./bench-command.js";
 import { initLogger, log } from "../telemetry/logger.js";
+import { createDefaultRegistry } from "../tools/registry.js";
 import { colorEnabled, detectTheme } from "../tui/theme.js";
 import { version } from "../version.js";
 import { HELP, parseCli } from "./args.js";
@@ -122,6 +124,25 @@ export async function main(argv: string[]): Promise<number> {
   const interactive = !args.print && process.stdin.isTTY === true && process.stdout.isTTY === true;
   log().info({ workspace: workspaceRoot, model: config.model, profile: config.permissions.profile, interactive, resume: !!resumeId }, "start");
 
+  // MCP discovery is asynchronous, while openSession is synchronous: connect
+  // once for the process and hand the same registry to every session. Bench and
+  // audit runs deliberately stay isolated from user-configured MCP servers.
+  // Non-interactive runs deny every approval, so starting servers there would
+  // only spawn processes that can never be called.
+  const mcp: McpRuntime = interactive
+    ? await connectMcpServers(config, workspaceRoot, {
+        reservedNames: createDefaultRegistry().list().map((t) => t.name),
+      })
+    : { tools: [], servers: [], warnings: [], close: async () => {} };
+  const mcpSecrets = interactive ? collectMcpSecrets(config) : [];
+  const tools = createDefaultRegistry();
+  for (const tool of mcp.tools) tools.register(tool);
+  const mcpWarnings = mcp.warnings;
+  const mcpInfo =
+    mcp.tools.length > 0
+      ? [`[mcp] ${mcp.tools.length} tool${mcp.tools.length === 1 ? "" : "s"} from ${mcp.servers.map((s) => `${s.name} (${s.toolCount})`).join(", ")}`]
+      : [];
+
   try {
     if (!interactive) {
       const prompt = [args.prompt, await readStdin()].filter(Boolean).join("\n\n");
@@ -129,8 +150,18 @@ export async function main(argv: string[]): Promise<number> {
         process.stderr.write("No prompt given. Usage: sutra -p \"your task\"  (or pipe text on stdin)\n");
         return 2;
       }
-      for (const w of warnings) process.stderr.write(`[warn] ${w}\n`);
-      const session = openSession({ config, provider, store, workspaceRoot, approve: async () => "deny", ...(resumeId ? { resumeId } : {}) });
+      for (const w of [...warnings, ...mcpWarnings]) process.stderr.write(`[warn] ${w}\n`);
+      for (const i of mcpInfo) process.stderr.write(`[info] ${i}\n`);
+      const session = openSession({
+        config,
+        provider,
+        store,
+        workspaceRoot,
+        approve: async () => "deny",
+        tools,
+        extraSecrets: mcpSecrets,
+        ...(resumeId ? { resumeId } : {}),
+      });
       if (!requireSandbox(session)) return 1;
       if (session.repairedToolCalls) process.stderr.write(`[info] repaired ${session.repairedToolCalls} interrupted tool call(s) from the previous run\n`);
       const result = await runHeadless(session, prompt, { theme, color, json: args.json });
@@ -139,10 +170,20 @@ export async function main(argv: string[]): Promise<number> {
 
     const [{ render }, React, { App, ApprovalBridge }] = await Promise.all([import("ink"), import("react"), import("../tui/App.js")]);
     const bridge = new ApprovalBridge();
-    const make = (id?: string) => openSession({ config, provider, store, workspaceRoot, approve: bridge.request, ...(id ? { resumeId: id } : {}) });
+    const make = (id?: string) =>
+      openSession({
+        config,
+        provider,
+        store,
+        workspaceRoot,
+        approve: bridge.request,
+        tools,
+        extraSecrets: mcpSecrets,
+        ...(id ? { resumeId: id } : {}),
+      });
     const session = make(resumeId);
     if (!requireSandbox(session)) return 1;
-    const notices = [...warnings];
+    const notices = [...warnings, ...mcpWarnings.map((w) => `[mcp] ${w}`), ...mcpInfo];
     if (!session.sandbox.runner && session.sandbox.mode === "auto") notices.push(`No OS sandbox: ${session.sandbox.reason}. Commands are protected by approvals only.`);
     if (session.repairedToolCalls) notices.push(`Repaired ${session.repairedToolCalls} tool call(s) interrupted in the previous run.`);
     if (session.instructions.length) notices.push(`Instructions: ${session.instructions.map((i) => i.path).join(", ")}`);
@@ -168,6 +209,7 @@ export async function main(argv: string[]): Promise<number> {
     log().error({ err: (err as Error).message }, "fatal");
     return 1;
   } finally {
+    await mcp.close();
     store.close();
   }
 }

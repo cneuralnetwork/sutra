@@ -202,6 +202,47 @@ With embeddings configured, code chunks are sent to that endpoint. Use a local s
 
 See [security.md](security.md) for what the sandbox enforces.
 
+## MCP servers
+
+Sutra can call tools exposed by [Model Context Protocol](https://modelcontextprotocol.io/) servers. Configure them under `mcpServers` in **user** config (`~/.sutra/config.json`). Project `.sutra/config.json` cannot define servers: a repository must never be able to launch a process or send your data to an endpoint you did not choose.
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/me/projects"]
+    },
+    "remote": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp",
+      "headers": { "Authorization": "Bearer your-token-here" }
+    }
+  }
+}
+```
+
+| Key | |
+| --- | --- |
+| `type` | `stdio` or `http`. Inferred from `command` / `url` when omitted |
+| `enabled` | `false` skips the server without deleting its config. Default `true` |
+| `command`, `args` | stdio: the executable to spawn and its arguments |
+| `cwd` | stdio: working directory, relative to the Sutra workspace. Default: the workspace |
+| `env` | stdio: environment variables for the server. Nothing is inherited implicitly |
+| `inheritEnv` | stdio: names of parent environment variables to copy explicitly, for example `["GITHUB_TOKEN"]` |
+| `url` | http: Streamable HTTP endpoint |
+| `headers` | http: extra request headers (keep tokens out of shared configs) |
+| `connectTimeoutMs` | Startup and `tools/list` timeout. Default `20000` |
+| `toolTimeoutMs` | Per-call timeout. Default `120000` |
+
+Sutra connects to all enabled servers at startup and discovers their tools before the first turn. A server that is offline or misconfigured produces a warning and is skipped; the others still load. Restart Sutra after changing `mcpServers`.
+
+Each tool appears as `mcp_<server>_<tool>` and keeps the server's JSON input schema, so the model sees the same contract the server publishes. Tool names are sanitized to `[A-Za-z0-9_-]`, truncated to 64 characters, and disambiguated if two remote names collide.
+
+**Permissions.** MCP tools are always treated as potentially unsafe: the harness cannot know whether a remote tool only reads data. In `confirm` and `flow` every call asks first; in `inspect` MCP servers are not started and their tools are hidden; in plan mode calls are refused until you approve the plan. There is no "allow for this session" shortcut. Non-interactive runs (`sutra -p`) do not start MCP servers and deny approvals, so they cannot call MCP tools.
+
+**Secrets.** stdio servers receive only `PATH`, `HOME`, `USER`, `SHELL`, `TERM`, `LOGNAME`, the variables you list in `inheritEnv`, and `env`. They do not inherit your shell's API keys. Values from `env`, inherited variables and `headers` are redacted from tool output, the UI, logs and the database. A stdio server is a normal process running as your user and is **not** covered by the command sandbox; only configure servers you trust. See [security.md](security.md#mcp-servers).
+
 ## Models
 
 Sutra ships metadata for `deepseek-flash` and `deepseek-v4-pro` (1M-token context, up to 384K output), taken from DeepSeek's documentation on 2026-11-05. Both support tool calls in thinking mode. To add or adjust a model:
