@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Add your sitemap URL here when domain is confirmed:
+# Sitemap: https://your-domain.com/sitemap.xml

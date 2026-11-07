@@ -1,0 +1,24 @@
+{
+  "name": "Sutra — an open-source AI coding agent for the terminal",
+  "short_name": "Sutra",
+  "description": "Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101923",
+  "theme_color": "#101923",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/github-avatar.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

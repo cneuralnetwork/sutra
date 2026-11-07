@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 186 40" width="186" height="40" role="img" aria-labelledby="t">
+  <title id="t">SUTRA</title>
+  <g stroke="currentColor">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+    <path d="M30 6 H12 C6 6 4 9 4 13 C4 17 6 20 12 20 H22 C28 20 30 23 30 27 C30 31 28 34 22 34 H4"/>
+    <path d="M44 6 V25 C44 31 47 34 53 34 H57 C63 34 66 31 66 25 V6"/>
+    <path d="M80 6 H106 M93 6 V34"/>
+    <path d="M120 34 V6 H136 C142 6 144 9 144 13 C144 17 142 20 136 20 H120 M134 20 L144 34"/>
+    <path d="M156 34 L169 6 L182 34 M161 24 H177"/>
+  </g>
+  </g>
+</svg>

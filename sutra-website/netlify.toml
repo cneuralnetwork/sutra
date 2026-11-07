@@ -1,0 +1,79 @@
+# Netlify configuration for the Sutra website.
+#
+# This is a plain static site: point Netlify at this folder as the base
+# directory and leave the build command empty. No npm install is needed.
+# Netlify reads this file from the base directory.
+
+[build]
+  publish = "."
+
+# Redirects that make the site easy to share.
+[[redirects]]
+  from = "/github"
+  to = "https://github.com/cneuralnetwork/sutra"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/download"
+  to = "https://github.com/cneuralnetwork/sutra#quick-start"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/docs"
+  to = "https://github.com/cneuralnetwork/sutra/tree/main/docs"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/docs/*"
+  to = "https://github.com/cneuralnetwork/sutra/tree/main/docs"
+  status = 302
+  force = true
+
+# Basic security headers. A Content-Security-Policy is intentionally omitted so
+# a self-hosted Plausible endpoint can be added without editing this file.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+    Cross-Origin-Opener-Policy = "same-origin"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/brand/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/og.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/apple-touch-icon.png"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/favicon.svg"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
+
+[[headers]]
+  for = "/site.js"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"

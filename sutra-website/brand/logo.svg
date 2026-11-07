@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 270 96" width="270" height="96" role="img" aria-labelledby="t">
+  <title id="t">Sutra (सूत्र)</title>
+  <rect width="270" height="96" rx="18" fill="#101923"/>
+  <g transform="translate(16 16)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 18 H52" stroke="#F4F1E8" stroke-width="5"/>
+      <path d="M37 18 V24 C37 31 23 28 23 36 C23 44 37 41 37 47" stroke="#F5B84B" stroke-width="5"/>
+    </g>
+    <circle cx="37" cy="18" r="4.5" fill="#101923" stroke="#F5B84B" stroke-width="3"/>
+    <circle cx="37" cy="50" r="5.5" fill="#F5B84B"/>
+  </g>
+  <g transform="translate(100 22) scale(0.8)" stroke="#F4F1E8">
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+    <path d="M30 6 H12 C6 6 4 9 4 13 C4 17 6 20 12 20 H22 C28 20 30 23 30 27 C30 31 28 34 22 34 H4"/>
+    <path d="M44 6 V25 C44 31 47 34 53 34 H57 C63 34 66 31 66 25 V6"/>
+    <path d="M80 6 H106 M93 6 V34"/>
+    <path d="M120 34 V6 H136 C142 6 144 9 144 13 C144 17 142 20 136 20 H120 M134 20 L144 34"/>
+    <path d="M156 34 L169 6 L182 34 M161 24 H177"/>
+  </g>
+  </g>
+  <text x="100" y="78" fill="#F5B84B" font-family="'Noto Sans Devanagari', 'Mukta', sans-serif" font-size="20" font-weight="600">सूत्र</text>
+</svg>

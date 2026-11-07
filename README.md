@@ -23,7 +23,8 @@
   <a href="#audit-and-replay">Audit</a> ·
   <a href="#benchmarks">Benchmarks</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="docs/">Docs</a>
+  <a href="docs/">Docs</a> ·
+  <a href="sutra-website/">Website</a>
 </p>
 
 ```bash
@@ -482,6 +483,14 @@ What to know before relying on it:
 - [ ] Linux CI and Windows support
 - [ ] Sub-agents for exploring, reviewing and testing
 - [ ] MCP tool integration
+
+## Website
+
+The landing page lives in [sutra-website/](sutra-website/). It is a plain HTML,
+CSS and JavaScript site with no build step; see
+[its README](sutra-website/README.md) for local preview and Netlify or Vercel
+deployment. The site uses root-relative asset paths and works on any domain
+without modification — just point your host at the `sutra-website/` folder.
 
 ## Contributing
 

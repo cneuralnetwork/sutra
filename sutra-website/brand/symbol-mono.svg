@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="t">
+  <title id="t">Sutra mark (monochrome)</title>
+  <!-- Single colour; inherits currentColor so it works on any background. -->
+  <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+    <path d="M12 18 H52"/>
+    <path d="M37 18 V24 C37 31 23 28 23 36 C23 44 37 41 37 47"/>
+  </g>
+  <circle cx="37" cy="50" r="5.5" fill="currentColor"/>
+</svg>

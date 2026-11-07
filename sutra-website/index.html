@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+  (() => {
+    document.documentElement.classList.add('js');
+    try {
+      const stored = localStorage.getItem('sutra-theme');
+      const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+      const theme = stored === 'light' || stored === 'dark' ? stored : prefersLight ? 'light' : 'dark';
+      document.documentElement.dataset.theme = theme;
+    } catch {
+      document.documentElement.dataset.theme = 'dark';
+    }
+  })();
+</script>
+  <title>Sutra — an open-source AI coding agent for the terminal</title>
+  <meta name="description" content="Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.">
+  <meta name="author" content="Sutra contributors">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#101923" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f1e8" media="(prefers-color-scheme: light)">
+  <meta name="format-detection" content="telephone=no">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Sutra">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Sutra — an open-source AI coding agent for the terminal">
+  <meta property="og:description" content="Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.">
+  <meta property="og:image" content="/og.png">
+  <meta property="og:image:secure_url" content="/og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="640">
+  <meta property="og:image:alt" content="Sutra — the thread that connects intelligence to action. An open-source AI coding agent for the terminal.">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Sutra — an open-source AI coding agent for the terminal">
+  <meta name="twitter:description" content="Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.">
+  <meta name="twitter:image" content="/og.png">
+  <meta name="twitter:image:alt" content="Sutra — the thread that connects intelligence to action. An open-source AI coding agent for the terminal.">
+  <script type="application/ld+json">[{"@context":"https://schema.org","@type":"WebSite","name":"Sutra","description":"Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.","inLanguage":"en","publisher":{"@type":"Organization","name":"Sutra contributors","url":"https://github.com/cneuralnetwork/sutra","logo":"/brand/github-avatar.png"}},{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Sutra","applicationCategory":"DeveloperApplication","applicationSubCategory":"AI coding agent","operatingSystem":"macOS, Linux","description":"Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.","downloadUrl":"https://github.com/cneuralnetwork/sutra#quick-start","codeRepository":"https://github.com/cneuralnetwork/sutra","license":"https://www.apache.org/licenses/LICENSE-2.0","softwareVersion":"0.1","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Organization","name":"Sutra contributors","url":"https://github.com/cneuralnetwork/sutra"}},{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"Is Sutra free and open source?","acceptedAnswer":{"@type":"Answer","text":"Yes. Sutra is released under the Apache License 2.0, including an explicit patent grant from contributors. You pay only your model provider when you use a cloud model. Local models are free."}},{"@type":"Question","name":"Which models and providers can I use?","acceptedAnswer":{"@type":"Answer","text":"DeepSeek is the tuned default. Sutra also works with OpenRouter, OpenAI, Anthropic, Google Gemini, xAI, Mistral, Groq, Cerebras, Together, Fireworks, DeepInfra, Moonshot, Z.AI, Qwen, SambaNova, Hugging Face, Vercel AI Gateway, any OpenAI-compatible server, and local models through Ollama, LM Studio, llama.cpp, vLLM and Jan."}},{"@type":"Question","name":"Does Sutra send my code anywhere?","acceptedAnswer":{"@type":"Answer","text":"The CLI sends the content the agent reads to the model provider you configure. With a local model, inference stays on your machine. Sutra stores sessions locally in SQLite and never pushes, publishes or deploys on its own. The security model explains exactly what is enforced."}},{"@type":"Question","name":"What does the OS sandbox actually prevent?","acceptedAnswer":{"@type":"Answer","text":"Commands run under your user account inside a sandbox. Writes are limited to the workspace, temp directories and package-manager caches; credential stores are hidden; outbound network traffic is blocked unless you approved that command as a network command. It is a strong second layer, not a virtual machine."}},{"@type":"Question","name":"Does Sutra work on Windows?","acceptedAnswer":{"@type":"Answer","text":"Not yet. macOS is the primary platform. Linux is supported, but the bubblewrap backend has not been tested on Linux yet. There is no Windows backend."}},{"@type":"Question","name":"How is Sutra different from other coding agents?","acceptedAnswer":{"@type":"Answer","text":"The harness owns the rules. Permissions and the sandbox cannot be changed by repository content, every action is recorded and replayable, and a finish gate refuses to call work done when the evidence is missing."}},{"@type":"Question","name":"Are the benchmark numbers guarantees?","acceptedAnswer":{"@type":"Answer","text":"No. The bundled suite is four small tasks. It measures whether a model handles Sutra’s tool loop reliably and roughly what each solved task costs; it is not a leaderboard of general coding ability. A harder held-out suite is on the roadmap."}}]}]</script>
+
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" sizes="512x512" href="/brand/github-avatar.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="home">
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header" data-site-header>
+  <div class="container header-inner">
+    <a class="brand-link" href="/" aria-label="Sutra home"><span class="logo-lockup" aria-hidden="true">
+  <svg class="logo-mark" viewBox="0 0 64 64">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 18H52" stroke="currentColor" stroke-width="5"></path>
+      <path d="M37 18V24C37 31 23 28 23 36C23 44 37 41 37 47" stroke="var(--gold)" stroke-width="5"></path>
+      <circle cx="37" cy="18" r="4.5" fill="var(--bg)" stroke="var(--gold)" stroke-width="3"></circle>
+      <circle cx="37" cy="50" r="5.5" fill="var(--gold)"></circle>
+    </g>
+  </svg>
+  <svg class="logo-word" viewBox="0 0 186 40">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+      <path d="M30 6H12C6 6 4 9 4 13C4 17 6 20 12 20H22C28 20 30 23 30 27C30 31 28 34 22 34H4"></path>
+      <path d="M44 6V25C44 31 47 34 53 34H57C63 34 66 31 66 25V6"></path>
+      <path d="M80 6H106M93 6V34"></path>
+      <path d="M120 34V6H136C142 6 144 9 144 13C144 17 142 20 136 20H120M134 20L144 34"></path>
+      <path d="M156 34L169 6L182 34M161 24H177"></path>
+    </g>
+  </svg>
+</span></a>
+    <nav class="desktop-nav" aria-label="Primary">
+      <a href="/#why-sutra">Why Sutra</a>
+      <a href="/#see-it-work">See it work</a>
+      <a href="/#benchmarks">Benchmarks</a>
+      <a href="/#quick-start">Install</a>
+    </nav>
+    <div class="header-actions">
+      <a class="icon-link github-link" href="https://github.com/cneuralnetwork/sutra" target="_blank" rel="noopener noreferrer" aria-label="Sutra on GitHub" data-analytics="github-header"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg></a>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch to light theme" title="Switch theme">
+  <svg class="theme-icon theme-icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+  <svg class="theme-icon theme-icon-moon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+</button>
+      <a class="btn btn-primary btn-sm header-cta" href="https://github.com/cneuralnetwork/sutra#quick-start" target="_blank" rel="noopener noreferrer" data-analytics="download-header"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg> Download</a>
+      <button class="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav" aria-label="Open menu">
+        <svg class="nav-icon-open" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg class="nav-icon-close" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="Mobile">
+    <div class="container mobile-nav-inner">
+      <a href="/#why-sutra" data-nav-link>Why Sutra</a>
+      <a href="/#see-it-work" data-nav-link>See it work</a>
+      <a href="/#benchmarks" data-nav-link>Benchmarks</a>
+      <a href="/#quick-start" data-nav-link>Install</a>
+      <a href="https://github.com/cneuralnetwork/sutra/tree/main/docs" target="_blank" rel="noopener noreferrer" data-nav-link>Documentation <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a class="btn btn-primary mobile-download" href="https://github.com/cneuralnetwork/sutra#quick-start" target="_blank" rel="noopener noreferrer" data-nav-link data-analytics="download-mobile"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg> Download on GitHub</a>
+    </div>
+  </nav>
+</header>
+  <main id="main">
+  <section class="hero">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow reveal"><span class="status-dot" aria-hidden="true"></span> Open source · Apache 2.0 · early preview</p>
+        <h1 class="reveal">The thread that connects <span class="text-gold">intelligence</span> to <span class="text-green">action</span>.</h1>
+        <p class="lede reveal">Sutra is an open-source AI coding agent for your terminal. It reads your code, makes the change, runs your tests, and tells you exactly what it did.</p>
+        <div class="hero-actions reveal">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cneuralnetwork/sutra#quick-start" target="_blank" rel="noopener noreferrer" data-analytics="download-hero"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg> Download on GitHub</a>
+          <a class="btn btn-ghost btn-lg" href="#see-it-work">See it work <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+        </div>
+        <p class="hero-meta reveal">Node.js 22.13+ · macOS and Linux · DeepSeek, OpenRouter, OpenAI, Anthropic, Gemini, local models and 20+ providers.</p>
+      </div>
+
+      <div class="hero-visual reveal"><div class="session-card" role="img" aria-label="Illustrative Sutra session: Sutra reads the session file, finds the expired-session bug, waits for approval on the edit, then runs the tests. All four tests pass. Five tool calls, nine seconds, 0.0016 dollars.">
+  <div class="terminal-bar">
+    <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="terminal-title">sutra / workspace</span>
+    <span class="terminal-status">● live</span>
+  </div>
+
+  <div class="session-body">
+    <p class="session-prompt"><span class="session-prompt-mark">›</span> The session tests fail. Find and fix the bug.</p>
+
+    <div class="session-thread">
+      <div class="session-node">
+        <span class="thread-dot thread-dot-gold" aria-hidden="true"></span>
+        <span class="session-tool">read_file</span>
+        <span class="session-file">src/session.js</span>
+        <span class="session-state">16 lines</span>
+      </div>
+      <div class="session-node">
+        <span class="thread-dot thread-dot-gold" aria-hidden="true"></span>
+        <span class="session-tool">grep_search</span>
+        <span class="session-file">expiresAt</span>
+        <span class="session-state">8 matches</span>
+      </div>
+      <div class="session-node">
+        <span class="thread-dot thread-dot-gold" aria-hidden="true"></span>
+        <span class="session-tool">run_tests</span>
+        <span class="session-file">npm test</span>
+        <span class="session-state session-state-error">2 of 4 failed</span>
+      </div>
+      <div class="session-node session-node-waiting">
+        <span class="thread-dot thread-dot-gold" aria-hidden="true"></span>
+        <span class="session-tool">edit_file</span>
+        <span class="session-file">src/session.js</span>
+        <span class="session-state session-state-waiting">waiting on you</span>
+      </div>
+      <div class="session-node">
+        <span class="thread-dot thread-dot-green" aria-hidden="true"></span>
+        <span class="session-tool">run_tests</span>
+        <span class="session-file">npm test</span>
+        <span class="session-state session-state-success">4 of 4 passed</span>
+      </div>
+    </div>
+
+    <div class="session-complete"><span class="session-check" aria-hidden="true">✓</span> Complete · tests passed</div>
+  </div>
+
+  <div class="session-foot"><span>5 tool calls</span><span>9s</span><span>$0.0016</span></div>
+</div></div>
+    </div>
+
+    <div class="container hero-stats reveal">
+      <div class="stat"><strong>24</strong><span>providers and local runtimes</span></div>
+      <div class="stat"><strong>3</strong><span>permission profiles</span></div>
+      <div class="stat"><strong>2</strong><span>layers of command safety</span></div>
+      <div class="stat"><strong>1</strong><span>thread from request to verified result</span></div>
+    </div>
+  </section>
+
+  <section class="section section-features" id="why-sutra">
+    <div class="container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Why Sutra</p>
+        <h2>A coding agent you can watch.</h2>
+        <p>Most agents ask you to trust the result. Sutra shows the work: every read, edit, command and test on one thread, with the permissions, evidence and cost attached.</p>
+      </div>
+
+      <div class="feature-grid">
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.06 12.35a1 1 0 0 1 0-.7C3.6 7.4 7.5 4.5 12 4.5s8.4 2.9 9.94 7.15a1 1 0 0 1 0 .7C20.4 16.6 16.5 19.5 12 19.5s-8.4-2.9-9.94-7.15Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        <h3>See every action</h3>
+        <p>Reads, edits, commands and test runs appear on one thread as they happen. Every session is saved locally and can be replayed or exported as an audit report.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra#audit-and-replay" target="_blank" rel="noopener noreferrer">Audit and replay <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <h3>Stay in charge</h3>
+        <p>Three permission profiles, plus an OS sandbox on macOS and Linux. Repository content can describe conventions, but it cannot loosen the rules.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra#staying-in-control" target="_blank" rel="noopener noreferrer">Permissions and sandbox <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="5"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/></svg></span>
+        <h3>Know what it costs</h3>
+        <p>Token usage, cache hits and estimated spend are tracked per request. A budget can pause the agent before it overspends, and local models report $0.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra#cost-and-budgets" target="_blank" rel="noopener noreferrer">Cost and budgets <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg></span>
+        <h3>Verified, not just finished</h3>
+        <p>A harness-owned finish gate checks each acceptance criterion against evidence recorded after the last edit, and marks what it cannot prove as unverified.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra/blob/main/docs/quality-engine.md" target="_blank" rel="noopener noreferrer">How verification works <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v3a6 6 0 0 1-12 0V8Z"/></svg></span>
+        <h3>Bring your own model</h3>
+        <p>DeepSeek is the tuned default. Use OpenRouter, OpenAI, Anthropic, Gemini or a local model through Ollama and friends. One workflow, any provider.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra/blob/main/docs/configuration.md#providers" target="_blank" rel="noopener noreferrer">Every provider <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      <article class="feature-card reveal">
+        <span class="feature-icon" aria-hidden="true"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg></span>
+        <h3>Built for real repositories</h3>
+        <p>A fast local index, symbol lookup and ranked code search help Sutra find the right code before it edits, with context kept small enough to be useful.</p>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra#codebase-understanding" target="_blank" rel="noopener noreferrer">Codebase understanding <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-terminal" id="see-it-work">
+    <div class="container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">A real example</p>
+        <h2>Find the bug. Fix it. Prove it.</h2>
+        <p>This is the bundled <code>session-expiry</code> example: a timestamp in seconds is compared with one in milliseconds, so every session looks expired. Sutra reads, edits, re-runs the tests and reports exactly what changed.</p>
+      </div>
+
+      <figure class="terminal-figure reveal">
+  <div class="terminal-shell">
+    <div class="terminal-bar">
+      <span class="terminal-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="terminal-title">sutra / examples / session-expiry</span>
+      <span class="terminal-badge">example</span>
+    </div>
+
+    <pre class="terminal-body" tabindex="0"><code><span class="term-gold">›</span> The session tests fail. Find and fix the bug.
+
+<span class="term-ivory">Sutra</span>  /  turn 1
+<span class="term-dim">│</span> Inspecting repository.
+<span class="term-dim">│</span>
+<span class="term-dim">├─</span> <span class="term-green">✓</span> read_file       src/session.js                        16 lines
+<span class="term-dim">├─</span> <span class="term-green">✓</span> grep_search     expiresAt                             8 matches
+<span class="term-dim">├─</span> <span class="term-green">✓</span> run_tests       npm test                              exit 1 · 0.3s
+<span class="term-dim">│</span>                    2 of 4 failed
+<span class="term-dim">│</span>
+<span class="term-dim">│</span> Found an issue in token expiration handling: <span class="term-ivory">expiresAt</span>
+<span class="term-dim">│</span> is in seconds but <span class="term-ivory">now</span> is milliseconds.
+<span class="term-dim">│</span>
+<span class="term-dim">╰─</span> <span class="term-gold">●</span> edit_file       src/session.js                       waiting on you
+
+  <span class="term-dim">╭──────────────────────────────────────────────────────────────╮</span>
+  <span class="term-dim">│</span>  <span class="term-gold">APPROVE</span>   edit_file  src/session.js                   <span class="term-green">+1</span> <span class="term-red">−1</span> <span class="term-dim">│</span>
+  <span class="term-dim">│</span>  Reason   modify files                                       <span class="term-dim">│</span>
+  <span class="term-dim">│</span>  @@ -6,7 +6,7 @@                                             <span class="term-dim">│</span>
+  <span class="term-dim">│</span>    6      <span class="term-red">−    return session.expiresAt &lt; now;</span>              <span class="term-dim">│</span>
+  <span class="term-dim">│</span>         6  <span class="term-green">+    return session.expiresAt * 1000 &lt;= now;</span>      <span class="term-dim">│</span>
+  <span class="term-dim">╰──────────────────────────────────────────────────────────────╯</span>
+
+<span class="term-dim">├─</span> <span class="term-green">✓</span> edit_file       src/session.js                         <span class="term-green">+1</span> <span class="term-red">−1</span> · approved
+<span class="term-dim">├─</span> <span class="term-green">✓</span> run_tests       npm test                              exit 0 · 0.3s
+<span class="term-dim">│</span>                    4 of 4 passed
+<span class="term-dim">│</span>
+<span class="term-dim">│</span> Fixed <span class="term-ivory">isExpired</span> in src/session.js. All 4 tests pass.
+<span class="term-dim">│</span>
+<span class="term-green">●</span>
+<span class="term-dim">─────────────────────────────────────────────────────────────────────────</span>
+<span class="term-ivory">Sutra</span>  /  <span class="term-green">Complete</span>  ·  5 iterations · 5 tool calls · 9s
+
+<span class="term-dim">╭────────────────╮ ╭────────────────╮ ╭────────────────╮ ╭────────────────╮</span>
+<span class="term-dim">│</span> <span class="term-gold">FILES CHANGED</span>  <span class="term-dim">│ │</span> <span class="term-gold">TESTS</span>          <span class="term-dim">│ │</span> <span class="term-gold">TOKENS</span>         <span class="term-dim">│ │</span> <span class="term-gold">ESTIMATED COST</span> <span class="term-dim">│</span>
+<span class="term-dim">│</span> 1              <span class="term-dim">│ │</span> <span class="term-green">✓ passed</span>       <span class="term-dim">│ │</span> 7,500 in       <span class="term-dim">│ │</span> $0.0016        <span class="term-dim">│</span>
+<span class="term-dim">│</span> src/session.js <span class="term-dim">│ │</span> 4 of 4 passed  <span class="term-dim">│ │</span> 600 out · 67%  <span class="term-dim">│ │</span> session $0.0016<span class="term-dim">│</span>
+<span class="term-dim">╰────────────────╯ ╰────────────────╯ ╰────────────────╯ ╰────────────────╯</span></code></pre>
+  </div>
+  <figcaption>
+    <span class="figure-note-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
+    The layout is exactly what Sutra draws; the numbers are illustrative. In a real run, test counts come from your runner and tokens and cost come from the provider's reported usage.
+  </figcaption>
+</figure>
+
+      <div class="terminal-notes reveal">
+        <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><p><strong>Approvals are part of the loop.</strong> The edit waits for you. The diff is shown before anything changes.</p></div>
+        <div class="note"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg><p><strong>The result is evidence.</strong> Test counts come from the runner. Tokens and cost come from the provider's reported usage.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-thread" id="how-it-works">
+    <div class="container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">How it works</p>
+        <h2>One loop, from question to evidence.</h2>
+        <p>Sutra repeats a simple loop until the task is done, you stop it, or a limit is reached. Every turn ends in an explicit state: completed, failed, cancelled or over budget.</p>
+      </div>
+
+      <ol class="thread-steps">
+      <li class="thread-step reveal">
+        <span class="thread-step-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg></span>
+        <span class="thread-step-number">01</span>
+        <h3>Read</h3>
+        <p>Index the repository, read the likely files, and find symbols, callers and the tests that mention them.</p>
+      </li>
+      <li class="thread-step reveal">
+        <span class="thread-step-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span>
+        <span class="thread-step-number">02</span>
+        <h3>Plan</h3>
+        <p>Plan mode investigates read-only and records each step. Nothing changes until you approve the plan.</p>
+      </li>
+      <li class="thread-step reveal">
+        <span class="thread-step-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></svg></span>
+        <span class="thread-step-number">03</span>
+        <h3>Act</h3>
+        <p>Edits are previewed as diffs and written atomically. Commands run one at a time, inside the OS sandbox.</p>
+      </li>
+      <li class="thread-step reveal">
+        <span class="thread-step-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span class="thread-step-number">04</span>
+        <h3>Verify</h3>
+        <p>Run your test command, then check each acceptance criterion against evidence recorded after the last edit.</p>
+      </li>
+      <li class="thread-step reveal">
+        <span class="thread-step-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg></span>
+        <span class="thread-step-number">05</span>
+        <h3>Record</h3>
+        <p>Save the session locally. Replay it as a timeline, or export a Markdown or JSON audit report.</p>
+      </li>
+      </ol>
+
+      <p class="thread-note reveal">Commands run inside the OS sandbox. Edits are approval-gated. Nothing is left half-recorded.</p>
+    </div>
+  </section>
+
+  <section class="section section-verification" id="verification">
+    <div class="container split">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Verification</p>
+        <h2>Done should mean proven.</h2>
+        <p>When the model stops calling tools, Sutra’s finish gate checks each acceptance criterion against checks recorded <em>after</em> the last edit. If the evidence is not there, the result is marked unverified — not done.</p>
+        <ul class="check-list">
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg> Evidence, not the model’s confidence</li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg> Counterexamples are re-run by the harness</li>
+          <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg> Reviews can raise gaps, never pass a criterion</li>
+        </ul>
+        <a class="text-link" href="https://github.com/cneuralnetwork/sutra/blob/main/docs/quality-engine.md" target="_blank" rel="noopener noreferrer">Read the quality engine docs <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a>
+      </div>
+
+      <figure class="evidence-card reveal">
+        <div class="evidence-head">
+          <span class="evidence-status"><span class="status-dot status-dot-green" aria-hidden="true"></span> verified</span>
+          <span class="evidence-meta">balanced mode · sent back 1×</span>
+        </div>
+
+        <div class="evidence-list">
+          <div class="evidence-row">
+            <svg class="evidence-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg>
+            <div><strong>The session tests pass</strong><code>npm test → exit 0 (4/4 passed)</code></div>
+          </div>
+          <div class="evidence-row">
+            <svg class="evidence-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg>
+            <div><strong>No test files are modified</strong><code>changed src/session.js; no test files changed</code></div>
+          </div>
+          <div class="evidence-row">
+            <svg class="evidence-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.8 10A10 10 0 1 1 17 3.34"/><path d="m9 11 3 3L22 4"/></svg>
+            <div><strong>Expired once the expiry time is reached</strong><code>provisional test “expiry boundary” passes</code></div>
+          </div>
+        </div>
+
+        <div class="evidence-review"><span>Review</span><p>aligned — “Makes isExpired compare expiresAt in seconds against now in milliseconds.”</p></div>
+        <div class="evidence-foot">1 provisional test · 0 still failing</div>
+        <figcaption>Layout of the evidence table; the rows are illustrative.</figcaption>
+      </figure>
+    </div>
+
+    <div class="container">
+      <div class="quality-modes reveal">
+        <div class="mode"><span class="mode-name mono">fast</span><p>Evidence labels only. No extra model calls.</p><span class="mode-cost">no extra cost</span></div>
+        <div class="mode mode-featured"><span class="mode-name mono">balanced</span><p>Packet, baseline, contract, finish gate and review. Counterexamples only when a criterion lacks evidence.</p><span class="mode-cost">+32% on bundled tasks</span></div>
+        <div class="mode"><span class="mode-name mono">deep</span><p>A second probe round, plus competing patches when a fix still fails.</p><span class="mode-cost">several times more</span></div>
+      </div>
+
+      <p class="measured-note reveal">On the four bundled tasks with live DeepSeek (5 November 2026), <strong>balanced solved 4/4</strong>, the gate said <strong>verified on exactly those 4</strong>, for <strong>$0.0074</strong> in 59 s. The tasks are small; read the limits in the docs.</p>
+    </div>
+  </section>
+
+  <section class="section section-benchmarks" id="benchmarks">
+    <div class="container">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Benchmarks</p>
+        <h2>Measure the setup you actually run.</h2>
+        <p><code>sutra bench</code> copies each task into a fresh repository, runs one agent turn with the Flow profile in the sandbox, restores the original tests, and judges only by the test command’s exit code.</p>
+      </div>
+
+      <div class="benchmark-meta reveal">
+        <span>First harness comparison</span><span>5 November 2026</span><span>deepseek-flash</span><span>4 tasks × 3 trials</span>
+      </div>
+
+      <div class="table-wrap reveal">
+        <table class="benchmark-table">
+          <caption class="sr-only">Harness comparison on four bundled tasks, three trials each, using deepseek-flash. Sutra (fast) passed 12 of 12 in a median 9.4 seconds at $0.0015 per solved task.</caption>
+          <thead>
+            <tr><th scope="col">Harness</th><th scope="col">Passed</th><th scope="col">Median time</th><th scope="col">Cost / solved task</th><th scope="col">Input tokens / run</th></tr>
+          </thead>
+          <tbody>
+          <tr class="is-sutra">
+            <th scope="row">Sutra (fast)</th>
+            <td>12/12</td>
+            <td>9.4 s</td>
+            <td>$0.0015</td>
+            <td>29,181</td>
+          </tr>
+          <tr>
+            <th scope="row">OpenCode</th>
+            <td>12/12</td>
+            <td>10.6 s</td>
+            <td>$0.0018</td>
+            <td>47,430</td>
+          </tr>
+          <tr>
+            <th scope="row">Goose</th>
+            <td>12/12</td>
+            <td>10.9 s</td>
+            <td>$0.0019</td>
+            <td>33,408</td>
+          </tr>
+          <tr>
+            <th scope="row">Claude Code</th>
+            <td>12/12</td>
+            <td>10.8 s</td>
+            <td>$0.0030</td>
+            <td>76,353</td>
+          </tr>
+          <tr class="is-sutra">
+            <th scope="row">Sutra (balanced)</th>
+            <td>12/12</td>
+            <td>12.8 s</td>
+            <td>$0.0030</td>
+            <td>41,024</td>
+          </tr>
+          <tr>
+            <th scope="row">Qwen Code</th>
+            <td>12/12</td>
+            <td>17.4 s</td>
+            <td>$0.0044</td>
+            <td>95,495</td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="table-note reveal">Every harness that reached the model solved every task. These small tasks separate cost, speed and tokens, not general accuracy. <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/benchmarks.md" target="_blank" rel="noopener noreferrer">Read the benchmark docs <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+
+  <section class="section section-providers" id="providers">
+    <div class="container">
+      <div class="section-heading center reveal">
+        <p class="eyebrow">Model independent</p>
+        <h2>Bring your own model.</h2>
+        <p>Use a cloud provider with one key, or keep code on your machine with a local model. <code>sutra init</code> checks that the model can call tools before you start.</p>
+      </div>
+
+      <div class="provider-groups">
+        <div class="provider-group reveal">
+          <h3>Cloud providers</h3>
+          <ul class="pill-list">
+            <li>DeepSeek</li>
+            <li>OpenRouter</li>
+            <li>OpenAI</li>
+            <li>Anthropic</li>
+            <li>Google Gemini</li>
+            <li>xAI</li>
+            <li>Mistral</li>
+            <li>Groq</li>
+            <li>Cerebras</li>
+            <li>Together AI</li>
+            <li>Fireworks AI</li>
+            <li>DeepInfra</li>
+            <li>Moonshot</li>
+            <li>Z.AI</li>
+            <li>Qwen</li>
+            <li>SambaNova</li>
+            <li>Hugging Face</li>
+            <li>Vercel AI Gateway</li>
+          </ul>
+        </div>
+        <div class="provider-group reveal">
+          <h3>On this machine · no key, private</h3>
+          <ul class="pill-list pill-list-local">
+            <li>Ollama</li>
+            <li>LM Studio</li>
+            <li>llama.cpp</li>
+            <li>vLLM</li>
+            <li>Jan</li>
+            <li>Any OpenAI-compatible server</li>
+          </ul>
+        </div>
+      </div>
+
+      <p class="providers-note reveal">DeepSeek is the tuned default. <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/configuration.md#providers" target="_blank" rel="noopener noreferrer">See every provider and endpoint <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></p>
+    </div>
+  </section>
+
+  <section class="section section-quickstart" id="quick-start">
+    <div class="container split quickstart-grid">
+      <div class="section-heading reveal">
+        <p class="eyebrow">Quick start</p>
+        <h2>Start with a task, not a config file.</h2>
+        <p>You need Node.js 22.13 or newer on macOS or Linux. <code>ripgrep</code> is optional and makes search faster.</p>
+
+        <div class="quickstart-notes">
+          <p><strong>A first run is safe.</strong> Sutra asks before it changes a file or runs a command.</p>
+          <p><strong>Bring a key or a local model.</strong> <code>sutra init</code> spots keys already in your environment and local servers that are running.</p>
+        </div>
+
+        <a class="btn btn-primary" href="https://github.com/cneuralnetwork/sutra#quick-start" target="_blank" rel="noopener noreferrer" data-analytics="download-quickstart"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg> Get Sutra on GitHub</a>
+      </div>
+
+      <div class="quickstart-steps reveal">
+        <div class="quickstart-step">
+          <div class="quickstart-step-head"><span class="step-number">1</span><h3>Install</h3></div>
+          <div class="code-block">
+    <div class="code-head">
+      <span class="code-label"><span class="code-dot" aria-hidden="true"></span>Terminal</span>
+      <button class="copy-button" type="button" data-copy aria-label="Copy code">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        <span data-copy-label aria-live="polite">Copy</span>
+      </button>
+    </div>
+    <pre tabindex="0"><code class="language-bash">git clone https://github.com/cneuralnetwork/sutra.git
+cd sutra
+npm install
+npm link</code></pre>
+  </div>
+        </div>
+
+        <div class="quickstart-step">
+          <div class="quickstart-step-head"><span class="step-number">2</span><h3>Connect a model</h3></div>
+          <div class="code-block">
+    <div class="code-head">
+      <span class="code-label"><span class="code-dot" aria-hidden="true"></span>Terminal</span>
+      <button class="copy-button" type="button" data-copy aria-label="Copy code">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        <span data-copy-label aria-live="polite">Copy</span>
+      </button>
+    </div>
+    <pre tabindex="0"><code class="language-bash">sutra init</code></pre>
+  </div>
+        </div>
+
+        <div class="quickstart-step">
+          <div class="quickstart-step-head"><span class="step-number">3</span><h3>Give it a task</h3></div>
+          <div class="code-block">
+    <div class="code-head">
+      <span class="code-label"><span class="code-dot" aria-hidden="true"></span>Terminal</span>
+      <button class="copy-button" type="button" data-copy aria-label="Copy code">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        <span data-copy-label aria-live="polite">Copy</span>
+      </button>
+    </div>
+    <pre tabindex="0"><code class="language-bash">cd your-project
+sutra &quot;explain how this repository is organised&quot;</code></pre>
+  </div>
+        </div>
+
+        <div class="example-tip"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="6 3 20 12 6 21 6 3"/></svg><p>Want a real bug to watch? Run <code>npm test</code> inside <code>examples/session-expiry</code>, then ask Sutra to fix the failing session tests.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-faq" id="faq">
+    <div class="container faq-container">
+      <div class="section-heading center reveal">
+        <p class="eyebrow">Questions</p>
+        <h2>What to know before you start.</h2>
+        <p>Sutra is an early preview. These are the answers that matter most before you point it at a repository.</p>
+      </div>
+
+      <div class="faq-list reveal">
+      <details class="faq-item">
+        <summary><span>Is Sutra free and open source?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>Yes. Sutra is released under the Apache License 2.0, including an explicit patent grant from contributors. You pay only your model provider when you use a cloud model. Local models are free.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>Which models and providers can I use?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>DeepSeek is the tuned default. Sutra also works with OpenRouter, OpenAI, Anthropic, Google Gemini, xAI, Mistral, Groq, Cerebras, Together, Fireworks, DeepInfra, Moonshot, Z.AI, Qwen, SambaNova, Hugging Face, Vercel AI Gateway, any OpenAI-compatible server, and local models through Ollama, LM Studio, llama.cpp, vLLM and Jan.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>Does Sutra send my code anywhere?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>The CLI sends the content the agent reads to the model provider you configure. With a local model, inference stays on your machine. Sutra stores sessions locally in SQLite and never pushes, publishes or deploys on its own. The security model explains exactly what is enforced.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>What does the OS sandbox actually prevent?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>Commands run under your user account inside a sandbox. Writes are limited to the workspace, temp directories and package-manager caches; credential stores are hidden; outbound network traffic is blocked unless you approved that command as a network command. It is a strong second layer, not a virtual machine.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>Does Sutra work on Windows?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>Not yet. macOS is the primary platform. Linux is supported, but the bubblewrap backend has not been tested on Linux yet. There is no Windows backend.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>How is Sutra different from other coding agents?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>The harness owns the rules. Permissions and the sandbox cannot be changed by repository content, every action is recorded and replayable, and a finish gate refuses to call work done when the evidence is missing.</p>
+      </details>
+      <details class="faq-item">
+        <summary><span>Are the benchmark numbers guarantees?</span><span class="faq-plus" aria-hidden="true">+</span></summary>
+        <p>No. The bundled suite is four small tasks. It measures whether a model handles Sutra’s tool loop reliably and roughly what each solved task costs; it is not a leaderboard of general coding ability. A harder held-out suite is on the roadmap.</p>
+      </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-cta">
+    <div class="container">
+      <div class="cta-panel reveal">
+        <div class="cta-thread" aria-hidden="true"></div>
+        <p class="eyebrow">Open source · Apache 2.0</p>
+        <h2>Read the code. Run the tests. See for yourself.</h2>
+        <p>Sutra is in early preview. The core is complete and covered by tests, and the roadmap is public.</p>
+        <div class="cta-actions">
+          <a class="btn btn-primary btn-lg" href="https://github.com/cneuralnetwork/sutra" target="_blank" rel="noopener noreferrer" data-analytics="download-cta"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path fill="currentColor" stroke="none" d="M12 .5C5.65.5.5 5.65.5 12c0 5.1 3.29 9.4 7.86 10.93.58.1.79-.25.79-.55v-2.14c-3.2.7-3.88-1.36-3.88-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.23-1.28-5.23-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.43-2.69 5.4-5.25 5.69.41.35.78 1.05.78 2.12v3.14c0 .3.21.66.8.55A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5Z"/></svg> Get Sutra on GitHub</a>
+          <a class="btn btn-ghost btn-lg" href="https://github.com/cneuralnetwork/sutra#readme" target="_blank" rel="noopener noreferrer" data-analytics="readme-cta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2Z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7Z"/></svg> Read the README</a>
+        </div>
+        <p class="cta-note"><a href="https://github.com/cneuralnetwork/sutra#roadmap" target="_blank" rel="noopener noreferrer">View the roadmap <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></a></p>
+      </div>
+    </div>
+  </section>
+  </main>
+  <footer class="site-footer">
+  <div class="container footer-grid">
+    <div class="footer-brand">
+      <a class="brand-link" href="/" aria-label="Sutra home"><span class="logo-lockup" aria-hidden="true">
+  <svg class="logo-mark" viewBox="0 0 64 64">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 18H52" stroke="currentColor" stroke-width="5"></path>
+      <path d="M37 18V24C37 31 23 28 23 36C23 44 37 41 37 47" stroke="var(--gold)" stroke-width="5"></path>
+      <circle cx="37" cy="18" r="4.5" fill="var(--bg)" stroke="var(--gold)" stroke-width="3"></circle>
+      <circle cx="37" cy="50" r="5.5" fill="var(--gold)"></circle>
+    </g>
+  </svg>
+  <svg class="logo-word" viewBox="0 0 186 40">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+      <path d="M30 6H12C6 6 4 9 4 13C4 17 6 20 12 20H22C28 20 30 23 30 27C30 31 28 34 22 34H4"></path>
+      <path d="M44 6V25C44 31 47 34 53 34H57C63 34 66 31 66 25V6"></path>
+      <path d="M80 6H106M93 6V34"></path>
+      <path d="M120 34V6H136C142 6 144 9 144 13C144 17 142 20 136 20H120M134 20L144 34"></path>
+      <path d="M156 34L169 6L182 34M161 24H177"></path>
+    </g>
+  </svg>
+</span></a>
+      <p class="footer-tagline">The thread that connects intelligence to action.</p>
+      <p class="footer-copy">An open-source AI coding agent for your terminal. See every action, stay in charge, and know what it costs.</p>
+      <p class="footer-status"><span class="status-dot" aria-hidden="true"></span> Early preview · v0.1 · Apache 2.0</p>
+    </div>
+
+    <nav class="footer-column" aria-label="Explore">
+      <h2>Explore</h2>
+      <a href="/#why-sutra">Why Sutra</a>
+      <a href="/#see-it-work">See it work</a>
+      <a href="/#benchmarks">Benchmarks</a>
+      <a href="/#quick-start">Install</a>
+    </nav>
+
+    <nav class="footer-column" aria-label="Documentation">
+      <h2>Documentation</h2>
+      <a href="https://github.com/cneuralnetwork/sutra#readme" target="_blank" rel="noopener noreferrer">README <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/configuration.md" target="_blank" rel="noopener noreferrer">Configuration <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/security.md" target="_blank" rel="noopener noreferrer">Security model <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/quality-engine.md" target="_blank" rel="noopener noreferrer">Quality engine <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/docs/benchmarks.md" target="_blank" rel="noopener noreferrer">Benchmarks <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+    </nav>
+
+    <nav class="footer-column" aria-label="Project">
+      <h2>Project</h2>
+      <a href="https://github.com/cneuralnetwork/sutra" target="_blank" rel="noopener noreferrer">GitHub <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener noreferrer">Contributing <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/issues" target="_blank" rel="noopener noreferrer">Issues <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="https://github.com/cneuralnetwork/sutra/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">License <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg></a>
+      <a href="/privacy/">Privacy</a>
+    </nav>
+  </div>
+
+  <div class="container footer-bottom">
+    <p>© <span data-year>2026</span> Sutra contributors. Released under the Apache License 2.0.</p>
+    <p class="footer-mantra"><span lang="sa">सूत्र</span> · the thread that connects intelligence to action.</p>
+  </div>
+</footer>
+  <script src="/site.js" defer></script>
+</body>
+</html>

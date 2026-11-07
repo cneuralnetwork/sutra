@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="title desc">
+  <title id="title">Sutra — AI coding agent for the terminal</title>
+  <desc id="desc">Sutra logo, tagline, and a connected inspect, edit, test workflow.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101923"/><stop offset="1" stop-color="#1D3040"/></linearGradient>
+    <linearGradient id="line" gradientUnits="userSpaceOnUse" x1="137" y1="0" x2="1143" y2="0"><stop stop-color="#F5B84B"/><stop offset="1" stop-color="#52B788"/></linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse"><path d="M48 0H0V48" fill="none" stroke="#9CAABA" stroke-opacity=".05"/></pattern>
+    <g id="mark" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 18H52" stroke="#F4F1E8" stroke-width="5"/>
+      <path d="M37 18V24C37 31 23 28 23 36C23 44 37 41 37 47" stroke="#F5B84B" stroke-width="5"/>
+      <circle cx="37" cy="18" r="4.5" fill="#101923" stroke="#F5B84B" stroke-width="3"/>
+      <circle cx="37" cy="50" r="5.5" fill="#F5B84B" stroke="none"/>
+    </g>
+    <g id="wordmark" fill="none" stroke="#F4F1E8" stroke-linecap="round" stroke-linejoin="round" stroke-width="5">
+      <path d="M30 6H12C6 6 4 9 4 13C4 17 6 20 12 20H22C28 20 30 23 30 27C30 31 28 34 22 34H4"/>
+      <path d="M44 6V25C44 31 47 34 53 34H57C63 34 66 31 66 25V6"/>
+      <path d="M80 6H106M93 6V34"/>
+      <path d="M120 34V6H136C142 6 144 9 144 13C144 17 142 20 136 20H120M134 20L144 34"/>
+      <path d="M156 34L169 6L182 34M161 24H177"/>
+    </g>
+  </defs>
+  <rect width="1280" height="640" fill="url(#bg)"/>
+  <rect width="1280" height="640" fill="url(#grid)"/>
+  <circle cx="1107" cy="116" r="250" fill="#F5B84B" fill-opacity=".035"/>
+  <circle cx="124" cy="576" r="310" fill="#6CA8E8" fill-opacity=".035"/>
+  <rect x="88" y="86" width="110" height="110" rx="26" fill="#223240" stroke="#385061"/>
+  <use href="#mark" transform="translate(103 101) scale(1.25)"/>
+  <use href="#wordmark" transform="translate(237 106) scale(2.13)"/>
+  <text x="242" y="228" fill="#F5B84B" font-family="'Noto Sans Devanagari','Mukta',sans-serif" font-size="36" font-weight="600">सूत्र</text>
+  <text x="88" y="305" fill="#F4F1E8" font-family="Inter,system-ui,sans-serif" font-size="43" font-weight="600">The thread that connects</text>
+  <text x="88" y="363" fill="#F4F1E8" font-family="Inter,system-ui,sans-serif" font-size="43" font-weight="600">intelligence to action.</text>
+  <text x="91" y="413" fill="#9CAABA" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="20">An open-source AI coding agent for the terminal.</text>
+  <rect x="88" y="463" width="1104" height="111" rx="16" fill="#0C141D" stroke="#385061" stroke-width="1.5"/>
+  <path d="M137 500H1143" stroke="url(#line)" stroke-width="3"/>
+  <circle cx="137" cy="500" r="11" fill="#F5B84B"/>
+  <circle cx="478" cy="500" r="11" fill="#F5B84B"/>
+  <circle cx="809" cy="500" r="11" fill="#F5B84B"/>
+  <circle cx="1143" cy="500" r="11" fill="#52B788"/>
+  <text x="110" y="548" fill="#F4F1E8" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="22">read</text>
+  <text x="451" y="548" fill="#F4F1E8" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="22">plan</text>
+  <text x="782" y="548" fill="#F4F1E8" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="22">edit</text>
+  <text x="1103" y="548" fill="#C4E8D4" font-family="'JetBrains Mono',ui-monospace,monospace" font-size="18">test</text>
+</svg>
