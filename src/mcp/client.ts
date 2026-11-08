@@ -125,7 +125,7 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
 
 /**
  * Redact known secrets from a JSON Schema (parameters) for model-visible use.
- * Returns a deep copy with string values that match known secrets replaced.
+ * Returns a deep copy with string values AND keys that match known secrets replaced.
  */
 function redactSchema(schema: Record<string, unknown>, redact: (text: string) => string): Record<string, unknown> {
   const seen = new WeakSet<object>();
@@ -137,7 +137,10 @@ function redactSchema(schema: Record<string, unknown>, redact: (text: string) =>
       if (seen.has(value)) return "[circular]";
       seen.add(value);
       const out: Record<string, unknown> = {};
-      for (const [k, v] of Object.entries(value)) out[k] = redactValue(v);
+      for (const [k, v] of Object.entries(value)) {
+        const redactedKey = redact(k);
+        out[redactedKey] = redactValue(v);
+      }
       return out;
     }
     return value;

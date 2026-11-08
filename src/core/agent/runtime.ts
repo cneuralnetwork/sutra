@@ -299,17 +299,18 @@ export class AgentRuntime {
       const latency = performance.now() - started;
       this.recordUsage(res.model, res.usage, latency, estimate);
 
-      const message = this.normalizeCalls(res.message);
-      this.append(message);
-      st.finalText = message.content;
+      const executionMessage = res.message;
+      const persistedMessage = this.normalizeCalls(res.message);
+      this.append(persistedMessage);
+      st.finalText = executionMessage.content;
       this.emit({
         type: "assistant_message",
-        content: message.content,
-        toolCalls: (message.toolCalls ?? []).map((c) => ({ id: c.id, name: c.name })),
+        content: executionMessage.content,
+        toolCalls: (executionMessage.toolCalls ?? []).map((c) => ({ id: c.id, name: c.name })),
         finishReason: res.finishReason,
       });
 
-      if (!message.toolCalls?.length) {
+      if (!executionMessage.toolCalls?.length) {
         if (res.finishReason === "length" && st.lengthContinuations < 1) {
           st.lengthContinuations++;
           this.emit({ type: "notice", level: "warn", message: "Response hit the output token limit; asking the model to continue." });
@@ -322,7 +323,7 @@ export class AgentRuntime {
         // The model stopping is a claim, not a result: the harness checks the evidence.
         if (st.quality) {
           this.setStatus("executing");
-          const decision = await st.quality.finish(message.content, signal);
+          const decision = await st.quality.finish(executionMessage.content, signal);
           if (decision.action === "continue") {
             this.append({ role: "user", content: decision.message });
             continue;
@@ -333,7 +334,7 @@ export class AgentRuntime {
       }
 
       this.setStatus("executing");
-      await this.executeToolCalls(message.toolCalls, st, signal);
+      await this.executeToolCalls(executionMessage.toolCalls, st, signal);
       this.d.store?.saveCheckpoint(this.d.sessionId, {
         status: "executing",
         turn: this.turn,
@@ -341,7 +342,7 @@ export class AgentRuntime {
         fileState: this.d.fileState.toJSON(),
       });
       if (signal.aborted) return this.finish(st, "cancelled", "Cancelled by user");
-      await this.checkpoint(message.toolCalls, st, signal);
+      await this.checkpoint(executionMessage.toolCalls, st, signal);
       if (this.loop.exhausted) return this.finish(st, "failed", "Stopped: the model kept repeating identical tool calls without progress.");
       if (st.toolCalls >= budget.maxToolCallsPerTurn)
         return this.finish(st, "budget_exceeded", `Stopped after ${st.toolCalls} tool calls (limit budget.maxToolCallsPerTurn). Say "continue" to proceed.`);
@@ -382,7 +383,7 @@ export class AgentRuntime {
     }
   }
 
-  /** Ensure every tool call has a unique, non-empty id and redacted arguments before it is persisted. */
+  /** Create a copy of the assistant message with redacted tool-call arguments for persistence. */
   private normalizeCalls(m: AssistantMessage): AssistantMessage {
     if (!m.toolCalls) return m;
     const seen = new Set<string>();
