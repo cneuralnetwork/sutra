@@ -64,7 +64,7 @@ describe("e2e: discover, fix, verify, resume", () => {
             toolCalls: [{ name: "edit_file", args: { path: "src/session.js", old_string: "return session.expiresAt < now;", new_string: "return session.expiresAt * 1000 <= now;" } }],
           };
         },
-        () => ({ reasoning: "Verify.", toolCalls: [{ name: "run_tests", args: { filter: "test/" } }] }),
+        () => ({ reasoning: "Verify.", toolCalls: [{ name: "run_tests", args: { filter: "test/**/*.test.js" } }] }),
         (body: WireBody) => {
           seen.secondTestRun = lastToolOutput(body);
           const passed = /exit code 0/.test(seen.secondTestRun);
@@ -102,7 +102,7 @@ describe("e2e: discover, fix, verify, resume", () => {
     expect(r.stderr).toMatch(/read_file\s+Read src\/session.js/);
     expect(r.stderr).toMatch(/edit_file\s+Edit src\/session.js/);
     expect(r.stderr).toContain("Files changed   src/session.js");
-    expect(r.stderr).toContain("Tests           passed (npm test -- test/)");
+    expect(r.stderr).toContain("Tests           passed (npm test -- 'test/**/*.test.js')");
 
     // Protocol: the first request is a proper thinking + tools request; the three
     // read-only calls were answered in order with one result each.

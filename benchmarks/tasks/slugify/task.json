@@ -2,7 +2,7 @@
   "title": "Implement slugify from its tests",
   "kind": "feature",
   "prompt": "Implement slugify in src/slugify.js according to its doc comment so that the tests pass. Do not modify the tests.",
-  "verify": "node --test test/",
+  "verify": "node --test test/**/*.test.js",
   "protected": ["test"],
   "timeoutMs": 600000
 }

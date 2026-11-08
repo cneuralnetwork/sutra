@@ -2,7 +2,7 @@
   "title": "Fix a seconds-vs-milliseconds expiry bug",
   "kind": "bugfix",
   "prompt": "The test suite fails. Find the bug in src/ and fix it. Do not modify the tests.",
-  "verify": "node --test test/",
+  "verify": "node --test test/**/*.test.js",
   "protected": ["test"],
   "timeoutMs": 600000
 }
