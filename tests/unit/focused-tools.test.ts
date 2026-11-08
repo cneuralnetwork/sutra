@@ -13,7 +13,7 @@ import { tempDir, writeFiles } from "../helpers/harness.js";
 const reg = createDefaultRegistry();
 
 const FILES = {
-  "package.json": JSON.stringify({ type: "module", scripts: { test: "node --test test/" } }),
+  "package.json": JSON.stringify({ type: "module", scripts: { test: "node --test test/**/*.test.js" } }),
   "src/session.js": `export function isExpired(session, now = Date.now()) {
   return session.expiresAt < now;
 }

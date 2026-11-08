@@ -56,6 +56,8 @@ export interface OpenSessionOptions {
   approve: (req: ApprovalRequest) => Promise<ApprovalChoice>;
   resumeId?: string;
   tools?: ToolRegistry;
+  /** Values that must never reach the model, UI or logs (for example MCP env/header secrets). */
+  extraSecrets?: string[];
   /** Override sandbox detection (tests). */
   sandbox?: SandboxStatus;
 }
@@ -151,6 +153,7 @@ export function openSession(o: OpenSessionOptions): SessionHandle {
 
   const redactor = new SecretRedactor();
   redactor.add(config.providers.deepseek.apiKey);
+  for (const secret of o.extraSecrets ?? []) redactor.add(secret);
   const instructions = loadInstructions(workspace.root);
   const isGitRepo = existsSync(join(workspace.root, ".git"));
   const date = new Date().toISOString().slice(0, 10);

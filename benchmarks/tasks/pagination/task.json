@@ -2,7 +2,7 @@
   "title": "Fix off-by-one errors in pagination",
   "kind": "bugfix",
   "prompt": "Users report that the first page skips items and the last page is missing. Fix src/paginate.js so the tests pass. Do not modify the tests.",
-  "verify": "node --test test/",
+  "verify": "node --test test/**/*.test.js",
   "protected": ["test"],
   "timeoutMs": 600000
 }

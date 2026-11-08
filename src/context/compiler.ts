@@ -123,8 +123,8 @@ export class ContextCompiler {
   compile(inp: CompileInput): string {
     const { result: r } = inp;
     if (r.output && inp.name !== "get_output") this.keep(inp.callId, inp.full ?? inp.content);
-    // Any command may change files, so identical test runs after it are not redundant.
-    if (inp.category === "execute" && !TEST_TOOLS.has(inp.name)) this.advance();
+    // Any command or MCP tool may change files, so identical test runs after it are not redundant.
+    if ((inp.category === "execute" || inp.category === "mcp") && !TEST_TOOLS.has(inp.name)) this.advance();
     if (!this.enabled || !r.ok) return inp.content;
     const data = r.data ?? {};
     if (inp.name === "read_file" && typeof data.hash === "string") return this.compileRead(inp, data);

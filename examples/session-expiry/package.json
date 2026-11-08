@@ -4,6 +4,6 @@
   "type": "module",
   "description": "Sample project with a deliberate bug, used by Sutra's end-to-end test and quick-start walkthrough.",
   "scripts": {
-    "test": "node --test test/"
+    "test": "node --test test/**/*.test.js"
   }
 }

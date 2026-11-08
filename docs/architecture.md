@@ -133,9 +133,15 @@ The runtime calls a per-turn `TurnQuality` at four points: `begin` (before the f
 - `buildAudit(store, sessionId)` reconstructs a session from SQLite: turns, steps (assistant text paired with the usage row of the request that produced it), tool calls with arguments, results, timings and sandbox, files changed, commands run and compactions. It never includes reasoning content. `renderReplay`, `renderMarkdown` and `renderJson` present it.
 - `runBench({ tasks, … })` copies each task's `repo/` into a temp directory, runs one agent turn with the Flow profile, a per-task spend limit and approvals denied, then restores the task's `protected` paths and runs its `verify` command, sandboxed. Pass or fail comes only from that command's exit code. Each run is a normal saved session. See [benchmarks.md](benchmarks.md).
 
+## MCP
+
+`src/mcp/client.ts` connects to the servers in user config before a session starts, discovers their tools, and wraps each one as a normal `Tool` with category `mcp`. The adapter keeps the server's JSON `inputSchema` as the model-visible `parameters` schema, compiles a Zod validator for harness-side argument checks, and formats text, structured content, resources and media into plain text results. The runtime then applies the usual loop detection, timeout, output limit, redaction and persistence.
+
+Connections live for the CLI process, not for one session, so starting a new session or resuming one reuses the same MCP servers. Bench, audit and delegated tasks are deliberately isolated from them. A failed server is reported as a warning and skipped. See [configuration.md](configuration.md#mcp-servers) and [security.md](security.md#mcp-servers).
+
 ## Extension points
 
 - **Tools:** implement `Tool<A>` (name, description, version, zod schema, category, `readOnly`, `describe()` for the permission engine, optional `preview()` for approval diffs, `execute()`), then `registry.register(tool)`.
 - **Providers:** `registerProvider()`.
 - **Delegated tasks:** `runDelegatedTask({ kind, brief, allowTool, profile, maxIterations, maxCostUsd }, env)` runs an isolated runtime with no user approvals. It is not exposed to the model yet.
-- **MCP:** not implemented. The intended shape is an MCP client that wraps remote tools as `Tool` objects with category `execute`, so they go through the same permission engine.
+- **MCP:** `connectMcpServers(config, workspaceRoot)` returns `Tool` adapters, server status and a `close()` handle. Register the adapters on a `ToolRegistry` and pass it to `openSession`.

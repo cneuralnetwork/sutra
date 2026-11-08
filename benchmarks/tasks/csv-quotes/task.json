@@ -2,7 +2,7 @@
   "title": "Handle quoted fields in a CSV parser",
   "kind": "bugfix",
   "prompt": "parseCsvLine in src/csv.js breaks on quoted fields that contain commas or escaped quotes. Fix it so the tests pass. Do not modify the tests.",
-  "verify": "node --test test/",
+  "verify": "node --test test/**/*.test.js",
   "protected": ["test"],
   "timeoutMs": 600000
 }

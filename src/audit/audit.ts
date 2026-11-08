@@ -101,8 +101,10 @@ export function buildAudit(store: SessionStore, sessionId: string): SessionAudit
               durationMs: (inv.data.durationMs as number | null) ?? null,
               ...(inv.data.sandbox ? { sandbox: String(inv.data.sandbox) } : {}),
             });
-          return { toolCallId: c.id, name: c.name, arguments: parseArgs(c.arguments), status: inv.status, output: inv.output, ...(inv.data ? { data: inv.data } : {}), startedAt: inv.startedAt, durationMs: inv.durationMs };
+          // Use the persisted (redacted) arguments from the invocation record.
+          return { toolCallId: c.id, name: c.name, arguments: parseArgs(inv.arguments), status: inv.status, output: inv.output, ...(inv.data ? { data: inv.data } : {}), startedAt: inv.startedAt, durationMs: inv.durationMs };
         }
+        // Fallback to message arguments (already redacted at persistence time).
         return { toolCallId: c.id, name: c.name, arguments: parseArgs(c.arguments), status: "unrecorded" as const, output: "" };
       });
       const u = usage[assistantIndex];

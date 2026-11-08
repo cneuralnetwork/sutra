@@ -223,11 +223,11 @@ Type `/` to open the command palette. ↑↓ selects a command and Enter runs it
 
 Sutra has three permission profiles. The default, **Confirm**, shows you every change before it happens.
 
-| Profile | Reading files | Editing files | Running commands |
-| --- | --- | --- | --- |
-| **Inspect** (`--readonly`) | Inside the workspace | Never | Never |
-| **Confirm** (default) | Automatic | You approve each change, with a diff | You approve each command |
-| **Flow** (`--profile flow`) | Automatic | Automatic inside the workspace | Automatic for routine checks like `npm test` or `git status`; anything else asks |
+| Profile | Reading files | Editing files | Running commands | MCP tools |
+| --- | --- | --- | --- | --- |
+| **Inspect** (`--readonly`) | Inside the workspace | Never | Never | Never (hidden) |
+| **Confirm** (default) | Automatic | You approve each change, with a diff | You approve each command | You approve each call |
+| **Flow** (`--profile flow`) | Automatic | Automatic inside the workspace | Automatic for routine checks like `npm test` or `git status`; anything else asks | You approve each call |
 
 **Every profile still asks before:**
 
@@ -236,6 +236,7 @@ Sutra has three permission profiles. The default, **Confirm**, shows you every c
 - destructive commands: `rm`, `git reset --hard`, `git push`, …
 - network access: `curl`, package installs, `git fetch`, …
 - `sudo`
+- calling any MCP tool (never auto-approved)
 
 Writes into `.git/`, and into any paths you mark as protected, are refused outright.
 
@@ -431,6 +432,8 @@ Put an `AGENTS.md` in your repository, or `.sutra/AGENTS.md`, to tell Sutra how 
 
 **Built-in tools:** `read_file`, `list_directory`, `glob_files`, `search_files`, `grep_search`, `repo_map`, `find_symbol`, `code_search`, `inspect_symbol`, `write_file`, `edit_file`, `apply_patch`, `execute_command`, `run_tests`, `diagnose_failure`, `git_status`, `git_diff`, `update_plan`, `hypotheses`, `get_output`.
 
+**MCP tools:** servers configured under `mcpServers` in your user config add their tools to the same loop as `mcp_<server>_<tool>`. See [MCP servers](docs/configuration.md#mcp-servers).
+
 More detail is in [docs/architecture.md](docs/architecture.md).
 
 ## Configuration
@@ -481,7 +484,7 @@ What to know before relying on it:
 - [ ] Published benchmark results across models
 - [ ] Linux CI and Windows support
 - [ ] Sub-agents for exploring, reviewing and testing
-- [ ] MCP tool integration
+- [x] MCP tool integration (stdio and Streamable HTTP, user-configured)
 
 ## Contributing
 

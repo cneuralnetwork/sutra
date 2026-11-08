@@ -9,6 +9,7 @@ import { SessionStore } from "../../src/memory/store.js";
 import type { ApprovalChoice } from "../../src/permissions/engine.js";
 import type { ModelProvider } from "../../src/providers/types.js";
 import type { SandboxStatus } from "../../src/sandbox/sandbox.js";
+import type { ToolRegistry } from "../../src/tools/registry.js";
 
 export function tempDir(prefix = "sutra-test-"): string {
   return realpathSync(mkdtempSync(join(tmpdir(), prefix)));
@@ -51,6 +52,8 @@ export function createHarness(opts: {
   dbFile?: string;
   resumeId?: string;
   sandbox?: SandboxStatus;
+  tools?: ToolRegistry;
+  extraSecrets?: string[];
 }): Harness {
   const workspace = opts.workspace ?? tempDir();
   const home = tempDir("sutra-home-");
@@ -66,6 +69,8 @@ export function createHarness(opts: {
     workspaceRoot: workspace,
     ...(opts.resumeId ? { resumeId: opts.resumeId } : {}),
     ...(opts.sandbox ? { sandbox: opts.sandbox } : {}),
+    ...(opts.tools ? { tools: opts.tools } : {}),
+    ...(opts.extraSecrets ? { extraSecrets: opts.extraSecrets } : {}),
     approve: async (r) => {
       approvals.push(r);
       return opts.approve ? opts.approve(r) : "once";

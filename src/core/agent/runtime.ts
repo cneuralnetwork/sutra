@@ -299,17 +299,18 @@ export class AgentRuntime {
       const latency = performance.now() - started;
       this.recordUsage(res.model, res.usage, latency, estimate);
 
-      const message = this.normalizeCalls(res.message);
-      this.append(message);
-      st.finalText = message.content;
+      const executionMessage = res.message;
+      const persistedMessage = this.normalizeCalls(res.message);
+      this.append(persistedMessage);
+      st.finalText = executionMessage.content;
       this.emit({
         type: "assistant_message",
-        content: message.content,
-        toolCalls: (message.toolCalls ?? []).map((c) => ({ id: c.id, name: c.name })),
+        content: executionMessage.content,
+        toolCalls: (executionMessage.toolCalls ?? []).map((c) => ({ id: c.id, name: c.name })),
         finishReason: res.finishReason,
       });
 
-      if (!message.toolCalls?.length) {
+      if (!executionMessage.toolCalls?.length) {
         if (res.finishReason === "length" && st.lengthContinuations < 1) {
           st.lengthContinuations++;
           this.emit({ type: "notice", level: "warn", message: "Response hit the output token limit; asking the model to continue." });
@@ -322,7 +323,7 @@ export class AgentRuntime {
         // The model stopping is a claim, not a result: the harness checks the evidence.
         if (st.quality) {
           this.setStatus("executing");
-          const decision = await st.quality.finish(message.content, signal);
+          const decision = await st.quality.finish(executionMessage.content, signal);
           if (decision.action === "continue") {
             this.append({ role: "user", content: decision.message });
             continue;
@@ -333,7 +334,7 @@ export class AgentRuntime {
       }
 
       this.setStatus("executing");
-      await this.executeToolCalls(message.toolCalls, st, signal);
+      await this.executeToolCalls(executionMessage.toolCalls, st, signal);
       this.d.store?.saveCheckpoint(this.d.sessionId, {
         status: "executing",
         turn: this.turn,
@@ -341,7 +342,7 @@ export class AgentRuntime {
         fileState: this.d.fileState.toJSON(),
       });
       if (signal.aborted) return this.finish(st, "cancelled", "Cancelled by user");
-      await this.checkpoint(message.toolCalls, st, signal);
+      await this.checkpoint(executionMessage.toolCalls, st, signal);
       if (this.loop.exhausted) return this.finish(st, "failed", "Stopped: the model kept repeating identical tool calls without progress.");
       if (st.toolCalls >= budget.maxToolCallsPerTurn)
         return this.finish(st, "budget_exceeded", `Stopped after ${st.toolCalls} tool calls (limit budget.maxToolCallsPerTurn). Say "continue" to proceed.`);
@@ -382,7 +383,7 @@ export class AgentRuntime {
     }
   }
 
-  /** Ensure every tool call has a unique, non-empty id before it is persisted. */
+  /** Create a copy of the assistant message with redacted tool-call arguments for persistence. */
   private normalizeCalls(m: AssistantMessage): AssistantMessage {
     if (!m.toolCalls) return m;
     const seen = new Set<string>();
@@ -390,7 +391,8 @@ export class AgentRuntime {
       let id = c.id || `call_${this.turn}_${i}`;
       while (seen.has(id)) id = `${id}_${i}`;
       seen.add(id);
-      return { ...c, id };
+      const redactedArgs = this.d.redactor.redact(c.arguments);
+      return { ...c, id, arguments: redactedArgs };
     });
     return m;
   }
@@ -502,7 +504,7 @@ export class AgentRuntime {
       return;
     }
     p.summary = req.summary;
-    if (this.mode === "plan" && (tool.category === "write" || tool.category === "execute")) {
+    if (this.mode === "plan" && (tool.category === "write" || tool.category === "execute" || tool.category === "mcp")) {
       p.outcome = "denied";
       p.deniedBy = "policy";
       p.result = fail("permission_denied", "Plan mode: nothing may be changed or run until the user approves the plan. Record the step in update_plan instead.");
@@ -553,7 +555,7 @@ export class AgentRuntime {
   private async run(p: PreparedCall, st: TurnState, signal: AbortSignal): Promise<void> {
     const tool = p.tool!;
     const started = new Date();
-    this.emit({ type: "tool_start", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: p.args });
+    this.emit({ type: "tool_start", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: this.redactForEvent(p.args) });
     const callAc = new AbortController();
     const onAbort = () => callAc.abort();
     signal.addEventListener("abort", onAbort, { once: true });
@@ -586,7 +588,16 @@ export class AgentRuntime {
     const durationMs = Date.now() - started.getTime();
     this.d.usage.recordTool(durationMs);
     this.afterTool(p, st);
-    this.emit({ type: "tool_end", toolCallId: p.call.id, name: tool.name, summary: p.summary, args: p.args, result: p.result!, durationMs, outcome: p.outcome ?? "ok" });
+    this.emit({
+      type: "tool_end",
+      toolCallId: p.call.id,
+      name: tool.name,
+      summary: p.summary,
+      args: this.redactForEvent(p.args),
+      result: this.redactedResult(p.result!),
+      durationMs,
+      outcome: p.outcome ?? "ok",
+    });
     this.persistInvocation(p, started, durationMs);
   }
 
@@ -622,7 +633,11 @@ export class AgentRuntime {
       if (tool.name === "run_tests" || tool.name === "diagnose_failure")
         st.tests.push({ command: String(r.data.command), passed: r.data.exitCode === 0, ...(r.data.counts ? { counts: r.data.counts as TestCounts } : {}) });
     }
-    if (!r.ok) this.recentErrors = [...this.recentErrors.slice(-9), `${tool.name}: ${r.error?.message ?? r.output}`];
+    if (!r.ok)
+      this.recentErrors = [
+        ...this.recentErrors.slice(-9),
+        this.d.redactor.redact(`${tool.name}: ${r.error?.message ?? r.output}`),
+      ];
   }
 
   private persistInvocation(p: PreparedCall, started: Date, durationMs: number): void {
@@ -631,14 +646,41 @@ export class AgentRuntime {
       sessionId: this.d.sessionId,
       toolCallId: p.call.id,
       name: p.call.name,
-      arguments: p.call.arguments,
+      arguments: this.d.redactor.redact(p.call.arguments),
       status: p.outcome ?? "ok",
       output: this.d.redactor.redact(r.output),
-      ...(r.data ? { data: r.data } : {}),
+      ...(r.data ? { data: this.redactForEvent(r.data) as Record<string, unknown> } : {}),
       startedAt: started.toISOString(),
       endedAt: new Date(started.getTime() + durationMs).toISOString(),
       durationMs,
     });
+  }
+
+  /**
+   * Copy model-supplied data with known secrets replaced. Used for events and
+   * persistence so a secret never reaches the UI, JSON output or the database
+   * through tool arguments. The depth cap keeps hostile nesting bounded.
+   */
+  private redactForEvent(value: unknown, depth = 0): unknown {
+    if (depth > 20) return "[truncated]";
+    if (typeof value === "string") return this.d.redactor.redact(value);
+    if (Array.isArray(value)) return value.map((v) => this.redactForEvent(v, depth + 1));
+    if (value && typeof value === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value)) out[k] = this.redactForEvent(v, depth + 1);
+      return out;
+    }
+    return value;
+  }
+
+  /** A redacted copy of a tool result for UI events and JSON output. */
+  private redactedResult(result: ToolResult): ToolResult {
+    return {
+      ...result,
+      output: this.d.redactor.redact(result.output),
+      ...(result.error ? { error: { ...result.error, message: this.d.redactor.redact(result.error.message) } } : {}),
+      ...(result.data ? { data: this.redactForEvent(result.data) as Record<string, unknown> } : {}),
+    };
   }
 
   private async executeToolCalls(calls: ToolCall[], st: TurnState, signal: AbortSignal): Promise<void> {
@@ -674,8 +716,8 @@ export class AgentRuntime {
             toolCallId: p.call.id,
             name: p.call.name,
             summary: p.summary,
-            args: p.args,
-            result: p.result,
+            args: this.redactForEvent(p.args),
+            result: this.redactedResult(p.result!),
             durationMs: 0,
             outcome: p.outcome ?? "error",
             ...(p.deniedBy ? { deniedBy: p.deniedBy } : {}),

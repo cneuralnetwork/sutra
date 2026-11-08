@@ -3,7 +3,7 @@ import { assessCommand, type CommandAssessment } from "./commands.js";
 import type { ResolvedPath } from "./paths.js";
 import { isSensitivePath, matchesAny } from "./sensitive.js";
 
-export type PermissionCategory = "read" | "write" | "execute" | "internal";
+export type PermissionCategory = "read" | "write" | "execute" | "internal" | "mcp";
 
 export interface PermissionRequest {
   tool: string;
@@ -119,6 +119,14 @@ export class PermissionEngine {
           default:
             return ask("run a command", `exec:${cmd}`, assessment);
         }
+      }
+
+      case "mcp": {
+        // A remote MCP tool's behaviour is opaque to the harness: it can read,
+        // write, run code or send data anywhere. Never classify it as read-only,
+        // and never offer a blanket session grant.
+        if (profile === "inspect") return deny("inspect profile does not call MCP tools");
+        return ask("call an MCP tool; its effects are controlled by the server, not by Sutra");
       }
     }
   }
