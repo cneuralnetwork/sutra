@@ -382,7 +382,7 @@ export class AgentRuntime {
     }
   }
 
-  /** Ensure every tool call has a unique, non-empty id before it is persisted. */
+  /** Ensure every tool call has a unique, non-empty id and redacted arguments before it is persisted. */
   private normalizeCalls(m: AssistantMessage): AssistantMessage {
     if (!m.toolCalls) return m;
     const seen = new Set<string>();
@@ -390,7 +390,8 @@ export class AgentRuntime {
       let id = c.id || `call_${this.turn}_${i}`;
       while (seen.has(id)) id = `${id}_${i}`;
       seen.add(id);
-      return { ...c, id };
+      const redactedArgs = this.d.redactor.redact(c.arguments);
+      return { ...c, id, arguments: redactedArgs };
     });
     return m;
   }

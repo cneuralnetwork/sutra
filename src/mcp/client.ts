@@ -123,6 +123,29 @@ function isPlainObject(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+/**
+ * Redact known secrets from a JSON Schema (parameters) for model-visible use.
+ * Returns a deep copy with string values that match known secrets replaced.
+ */
+function redactSchema(schema: Record<string, unknown>, redact: (text: string) => string): Record<string, unknown> {
+  const seen = new WeakSet<object>();
+
+  function redactValue(value: unknown): unknown {
+    if (typeof value === "string") return redact(value);
+    if (Array.isArray(value)) return value.map(redactValue);
+    if (value && typeof value === "object") {
+      if (seen.has(value)) return "[circular]";
+      seen.add(value);
+      const out: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(value)) out[k] = redactValue(v);
+      return out;
+    }
+    return value;
+  }
+
+  return redactValue(schema) as Record<string, unknown>;
+}
+
 /** Strip terminal escape sequences and control characters from server-controlled text. */
 function sanitizeText(text: string): string {
   return text
@@ -226,6 +249,9 @@ export function createMcpToolAdapter(opts: {
   const { server, transport, localName, remote, client, timeoutMs } = opts;
   const redact = opts.redact ?? ((text: string) => text);
   const { parameters, schema } = compileMcpInputSchema(remote.inputSchema);
+  // Redact secrets from the model-visible schema (parameters) while keeping
+  // the original Zod validator (schema) for harness-side validation.
+  const redactedParameters = redactSchema(parameters, redact);
   const displayName = sanitizeText(redact(remote.name));
   const rawTitle = remote.annotations?.title ?? remote.title;
   const title = rawTitle ? oneLine(sanitizeText(redact(rawTitle)), 100) : undefined;
@@ -242,14 +268,14 @@ export function createMcpToolAdapter(opts: {
     description: `[MCP ${server} · ${displayName}] ${descBody}`,
     version: "1.0.0",
     schema,
-    parameters,
+    parameters: redactedParameters,
     category: "mcp",
     // Remote tool annotations are untrusted hints, so MCP calls never run
     // unapproved or in parallel batches.
     readOnly: false,
     timeoutMs,
     describe(args: Record<string, unknown>, ctx: ToolContext) {
-      const argText = sanitizeText(ctx.redactor.redact(summarizeArgs(args)));
+      const argText = sanitizeText(summarizeArgs(args, (t) => ctx.redactor.redact(t)));
       return {
         tool: localName,
         category: "mcp",
@@ -291,11 +317,13 @@ export function createMcpToolAdapter(opts: {
   };
 }
 
-function summarizeArgs(args: Record<string, unknown>): string {
+function summarizeArgs(args: Record<string, unknown>, redact?: (text: string) => string): string {
   const entries = Object.entries(args);
   if (entries.length === 0) return "";
   const parts = entries.slice(0, 3).map(([k, v]) => {
-    const val = typeof v === "string" ? JSON.stringify(oneLine(v, 36)) : oneLine(safeJson(v), 36);
+    // Redact before shortening so full secret values are matched.
+    const redacted = redact ? (typeof v === "string" ? redact(v) : v) : v;
+    const val = typeof redacted === "string" ? JSON.stringify(oneLine(redacted, 36)) : oneLine(safeJson(redacted), 36);
     return `${k}=${val}`;
   });
   if (entries.length > 3) parts.push(`+${entries.length - 3} more`);
